@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # This script allows you to navigate an s3 object store and select a single file to download
-# unfinished
+# todo, go back one directory
 
 # Transform long options to short ones
 
@@ -63,12 +63,14 @@ gum style \
 # while file not selected
 while [ -z "$FILE" ]; do
 
-    SELECT=$(gum spin --title="Loading file list..." --show-output -- aws --profile $PROFILE --endpoint $ENDPOINT s3 ls s3://$BUCKET | gum filter)
+    SELECT=$(gum spin --title="Loading file list..." --show-output -- aws --profile $PROFILE --endpoint $ENDPOINT s3 ls s3://$BUCKET)
     echo "$SELECT"
     #exit program if no file selected
     if [ -z "$SELECT" ]; then
         exit 0
     fi
+
+    SELECT=$(echo "$SELECT" | gum filter)
 
     if [[ $SELECT == *"PRE"* ]]; then
         #append word after PRE to BUCKET
@@ -80,3 +82,4 @@ while [ -z "$FILE" ]; do
         gum confirm "Download $FILE to current directory?" && gum spin -s line --title="Downloading $FILE" --show-output -- aws --profile $PROFILE --endpoint $ENDPOINT s3 cp s3://$FILE . 
     fi
 done
+echo "no file found, exiting..."
