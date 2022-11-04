@@ -1,25 +1,74 @@
 #!/bin/sh
 #
 # This script allows you to navigate an s3 object store and select a single file to download
+# unfinished
 
-# (tr -s ' ') replaces whitespace with single space then (sed -e 's/^[ \t]*//') removes leading whitespace and finally (cut -d " " -f2) separates the line by spaces and selects the second field 
+# Transform long options to short ones
 
-if [[ -z "$1" ]]; then
+for arg in "$@"; do
+  shift
+  case "$arg" in
+    '--endpoint')   set -- "$@" '-e'   ;;
+    '--profile') set -- "$@" '-p'   ;;
+    '--bucket')   set -- "$@" '-b'   ;;
+    *)          set -- "$@" "$arg" ;;
+  esac
+done
+
+while getopts 'b:p:e:' OPTION; do
+  case "$OPTION" in
+    b)
+    #   echo "bucket should be set to $OPTARG"
+      avalue="$OPTARG" 
+      BUCKET=$OPTARG
+      ;;
+    p)
+    #   echo "profile should be set to $OPTARG"
+      avalue="$OPTARG"
+      PROFILE=$OPTARG
+      ;;
+    e)
+    #   echo "endpoint should be set to $OPTARG"
+      avalue="$OPTARG"
+      ENDPOINT=$OPTARG
+      ;;
+    ?)
+      echo "script usage: $(basename \$0) [-e --endpoint url] [-b --bucket] [-p --profile aws-credentials profile (optional)]" >&2
+      exit 1
+      ;;
+  esac
+done
+
+if [[ -z "$PROFILE" ]]; then
     PROFILE="default"
-else
-    PROFILE=$1
+fi
+if [[ -z "$ENDPOINT" ]]; then
+    ENDPOINT=$(gum input --placeholder "No endpoint url provided, Enter endpoint url")
 fi
 
-if [[ -z "$2" ]]; then
-    BUCKET=$(gum input --placeholder "Enter bucket name with trailing slash")
-else
-    BUCKET=$2
+if [[ -z "$BUCKET" ]]; then
+    BUCKET=$(gum input --placeholder "No bucket provided, Enter bucket name")
 fi
 
+#add trailing slash to BUCKET if not present
+if [[ $BUCKET != */ ]]; then
+    BUCKET="$BUCKET/"
+fi
+
+
+gum style \
+	--foreground 212 --border-foreground 212 --border double \
+	--align center --width 50 --margin "1 2" --padding "2 4" \
+	'Explore an S3 Object Store' "Endpoint: $ENDPOINT" "Bucket: $BUCKET" "Profile: $PROFILE" 'Download a single file'
 # while file not selected
 while [ -z "$FILE" ]; do
 
-    SELECT=$(gum spin --title="Loading file list..." --show-output -- aws --profile $PROFILE --endpoint https://s3-west.nrp-nautilus.io s3 ls s3://$BUCKET | gum filter)
+    SELECT=$(gum spin --title="Loading file list..." --show-output -- aws --profile $PROFILE --endpoint $ENDPOINT s3 ls s3://$BUCKET | gum filter)
+    echo "$SELECT"
+    #exit program if no file selected
+    if [ -z "$SELECT" ]; then
+        exit 0
+    fi
 
     if [[ $SELECT == *"PRE"* ]]; then
         #append word after PRE to BUCKET
@@ -28,7 +77,6 @@ while [ -z "$FILE" ]; do
         echo $BUCKET
     else
         FILE=$BUCKET$(echo $SELECT | tr -s ' ' | sed -e 's/^[ \t]*//' | cut -d " " -f4)
-        gum spin -s line --title="Downloading $FILE" --show-output -- aws --profile $PROFILE --endpoint https://s3-west.nrp-nautilus.io s3 cp s3://$FILE . 
-
+        gum confirm "Download $FILE to current directory?" && gum spin -s line --title="Downloading $FILE" --show-output -- aws --profile $PROFILE --endpoint $ENDPOINT s3 cp s3://$FILE . 
     fi
 done
