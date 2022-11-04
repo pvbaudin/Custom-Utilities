@@ -1,0 +1,1 @@
+ conda activate $(conda env list | gum choose | cut -d " " -f1 )

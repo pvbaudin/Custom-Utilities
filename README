@@ -1,0 +1,7 @@
+change conda environment use:
+	source change-conda-env.sh
+
+Have to use source otherwise it launches in a sub-shell where conda is not configured 
+
+add alias to .zshrc
+alias ce="source /Users/pierre/Useful-Scripts/change-conda-env.sh"
