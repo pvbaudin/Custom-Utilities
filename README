@@ -5,3 +5,6 @@ Have to use source otherwise it launches in a sub-shell where conda is not confi
 
 add alias to .zshrc
 alias ce="source /Users/pierre/Useful-Scripts/change-conda-env.sh"
+
+select and kill running process
+alias kill-task="/path/to/search-and-kill-task.sh"
