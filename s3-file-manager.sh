@@ -70,16 +70,29 @@ while [ -z "$FILE" ]; do
         exit 0
     fi
 
-    SELECT=$(echo "$SELECT" | gum filter)
+    SELECT=$(echo "back\n$SELECT" | gum filter)
 
-    if [[ $SELECT == *"PRE"* ]]; then
+    #if select is back, remove last directory from BUCKET
+    if [[ $SELECT == "back" ]]; then
+        # remove last directory from BUCKET
+        BUCKET=$(echo $BUCKET | sed 's/[^/]*[/]$//')
+        echo "back"
+        echo "bucket is now:"
+        echo $BUCKET
+    elif [[ $SELECT == *"PRE"* ]]; then
         #append word after PRE to BUCKET
         BUCKET="$BUCKET$(echo $SELECT | tr -s ' ' | sed -e 's/^[ \t]*//' | cut -d " " -f2)"
         echo "bucket is now:"
         echo $BUCKET
+        ACTION=$(gum choose "list contents" "download bucket")
+        if [[ $ACTION == "download bucket" ]]; then
+            gum confirm "Download $BUCKET to current directory?" && gum spin -s line --title="Downloading $FILE" --show-output -- aws --profile $PROFILE --endpoint $ENDPOINT s3 cp --recursive s3://$BUCKET . 
+            exit 0
+        fi
     else
         FILE=$BUCKET$(echo $SELECT | tr -s ' ' | sed -e 's/^[ \t]*//' | cut -d " " -f4)
         gum confirm "Download $FILE to current directory?" && gum spin -s line --title="Downloading $FILE" --show-output -- aws --profile $PROFILE --endpoint $ENDPOINT s3 cp s3://$FILE . 
+        exit 0
     fi
 done
-echo "no file found, exiting..."
+echo "no file selected exiting"
