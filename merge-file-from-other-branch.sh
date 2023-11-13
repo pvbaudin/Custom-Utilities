@@ -12,7 +12,6 @@ if [ -n "$SELECTED_FILE" ]; then
 
   rm INCOMING
   rm temp2
-  echo "here"
 else
     echo "No file selected. Exiting."
 fi
