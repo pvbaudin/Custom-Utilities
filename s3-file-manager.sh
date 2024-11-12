@@ -8,6 +8,7 @@
 for arg in "$@"; do
   shift
   case "$arg" in
+    '--region')   set -- "$@" '-r'   ;;
     '--endpoint')   set -- "$@" '-e'   ;;
     '--profile') set -- "$@" '-p'   ;;
     '--bucket')   set -- "$@" '-b'   ;;
@@ -15,8 +16,13 @@ for arg in "$@"; do
   esac
 done
 
-while getopts 'b:p:e:' OPTION; do
+while getopts 'r:b:p:e:' OPTION; do
   case "$OPTION" in
+    r)
+    #   echo "region" should be set to $OPTARG"
+      avalue="$OPTARG" 
+      REGION=$OPTARG
+      ;;
     b)
     #   echo "bucket should be set to $OPTARG"
       avalue="$OPTARG" 
@@ -42,8 +48,13 @@ done
 if [[ -z "$PROFILE" ]]; then
     PROFILE="default"
 fi
+
+if [[ -z "$REGION" ]]; then
+    REGION=$(gum input --placeholder "No region provided, Enter region (ex us-east-1)")
+fi
+
 if [[ -z "$ENDPOINT" ]]; then
-    ENDPOINT=$(gum input --placeholder "No endpoint url provided, Enter endpoint url")
+    ENDPOINT="https://s3.$REGION.amazonaws.com"
 fi
 
 if [[ -z "$BUCKET" ]]; then
@@ -59,11 +70,11 @@ fi
 gum style \
 	--foreground 212 --border-foreground 212 --border double \
 	--align center --width 50 --margin "1 2" --padding "2 4" \
-	'Explore an S3 Object Store' "Endpoint: $ENDPOINT" "Bucket: $BUCKET" "Profile: $PROFILE" 'Download a single file'
+	'Explore an S3 Object Store' "Region: $REGION" "Endpoint: $ENDPOINT" "Bucket: $BUCKET" "Profile: $PROFILE" 'Download a single file'
 # while file not selected
 while [ -z "$FILE" ]; do
 
-    SELECT=$(gum spin --title="Loading file list..." --show-output -- aws --profile $PROFILE --endpoint $ENDPOINT s3 ls s3://$BUCKET)
+    SELECT=$(gum spin --title="Loading file list..." --show-output -- aws --region $REGION --profile $PROFILE --endpoint $ENDPOINT s3 ls s3://$BUCKET)
     echo "$SELECT"
     #exit program if no file selected
     if [ -z "$SELECT" ]; then
